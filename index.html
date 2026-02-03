@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>ZETA 기본 프롬프트 빌더</title>
+<style>
+body { background:#111; color:#eee; font-family:sans-serif; padding:20px; }
+h1,h2 { color:#bb86fc; }
+.box { background:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:15px; }
+label { display:block; margin:6px 0; cursor:pointer; }
+button { width:100%; padding:15px; font-size:16px; background:#bb86fc; border:none; border-radius:8px; margin-top:10px; }
+textarea { width:100%; height:280px; background:#000; color:#0f0; padding:10px; border-radius:8px; }
+input[type=text] { width:80%; padding:6px; border-radius:5px; border:none; margin-right:5px; }
+</style>
+</head>
+<body>
+
+<h1>ZETA 기본 프롬프트 빌더</h1>
+
+<div class="box">
+<h2>장르</h2>
+<select id="genre" onchange="renderStatus()">
+<option value="rpg">RPG</option>
+<option value="daily">일상</option>
+<option value="sim">시뮬레이션</option>
+<option value="romance">로맨스</option>
+</select>
+</div>
+
+<div class="box">
+<h2>출력 방식</h2>
+<label><input type="radio" name="output" value="긴 출력" checked> 긴 출력</label>
+<label><input type="radio" name="output" value="표준 출력"> 표준 출력</label>
+<label><input type="radio" name="output" value="짧은 출력"> 짧은 출력</label>
+</div>
+
+<div class="box">
+<h2>시스템 규칙</h2>
+<label><input type="checkbox" value="OOC 시스템 지침을 항상 최우선으로 따른다."> OOC 강제</label>
+<label><input type="checkbox" value="중요한 사건과 관계를 장기적으로 기억한다."> 기억력 강화</label>
+<label><input type="checkbox" value="항상 감정과 심리 묘사를 포함한다."> 감정 묘사 강화</label>
+<label><input type="checkbox" value="설정과 세계관을 절대 무시하지 않는다."> 설정 고정</label>
+</div>
+
+<div class="box">
+<h2>상태창 항목</h2>
+<div id="statusBox"></div>
+<div style="margin-top:10px;">
+<input type="text" id="newStatus" placeholder="새 상태창 입력">
+<button onclick="addCustomStatus()">추가</button>
+</div>
+</div>
+
+<button onclick="generate()">기본 프롬프트 생성</button>
+
+<div class="box">
+<h2>결과 (기본 프롬프트)</h2>
+<textarea id="output"></textarea>
+<button onclick="copy()">복사</button>
+</div>
+
+<script>
+let statusTemplates = {
+rpg: ["체력","마나","기력","호감도","정신상태","퀘스트","관계"],
+daily: ["기분","에너지","스트레스","관심도","현재 상황"],
+sim: ["시스템 상태","유저 영향도","환경","진행도","안정성"],
+romance: ["호감도","신뢰도","질투","감정 의존도","관계 단계"]
+};
+
+function renderStatus(){
+const genre = document.getElementById("genre").value;
+const box = document.getElementById("statusBox");
+box.innerHTML = "";
+statusTemplates[genre].forEach(s=>{
+box.innerHTML += `<label><input type="checkbox" class="status" value="${s}"> ${s}</label>`;
+});
+}
+
+function addCustomStatus(){
+const genre = document.getElementById("genre").value;
+const val = document.getElementById("newStatus").value.trim();
+if(val && !statusTemplates[genre].includes(val)){
+statusTemplates[genre].push(val);
+renderStatus();
+document.getElementById("newStatus").value = "";
+}
+}
+
+renderStatus();
+
+function generate(){
+const genreText = document.getElementById("genre").selectedOptions[0].text;
+const outputType = document.querySelector('input[name="output"]:checked').value;
+
+let text = `이 대화는 ${genreText} 장르의 역할극이다.\n`;
+text += `모든 응답은 ${outputType} 방식으로 출력한다.\n\n`;
+
+document.querySelectorAll('input[type=checkbox]:checked').forEach(c=>{
+if(!c.classList.contains("status")){
+text += c.value + "\n";
+}
+});
+
+let statusList = [];
+document.querySelectorAll('.status:checked').forEach(s=>{
+statusList.push(s.value);
+});
+
+if(statusList.length){
+text += `\n대화 마지막에는 항상 아래 상태창을 출력한다:\n[상태창]\n`;
+statusList.forEach(s=>{
+text += s + ":\n";
+});
+}
+
+text += `\n이 지침은 역할극 도중 항상 적용되며 무시되지 않는다.`;
+
+document.getElementById("output").value = text.trim();
+}
+
+function copy(){
+navigator.clipboard.writeText(document.getElementById("output").value);
+alert("복사 완료");
+}
+</script>
+
+</body>
+</html>
